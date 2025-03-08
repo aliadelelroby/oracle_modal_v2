@@ -10,12 +10,10 @@ window.onload = function () {
     NOTES.filter((note) => !note.accidental).length
   );
 
-  // Initialize chord table
-  window.chordsTable = new ChordTable("#chords-table");
-  startFillChordsTable(NOTES, CHORDS);
-
-  // Initially hide the chord table container since no notes are selected yet
-  document.getElementById("chords-table-container").style.display = "none";
+  console.log(
+    "Natural notes count:",
+    NOTES.filter((note) => !note.accidental).length
+  );
 
   // Initialize modal result with welcome message
   updateModalResult(null);
@@ -76,9 +74,9 @@ const MODES = {
   Locrian: {
     name: "Locrian",
     pattern: ["1", "2b", "3b", "4", "4#", "6b", "7b"],
-    essential: ["1", "3b", "4#"],
-    omissions: ["2b", "4", "6b", "7b"],
-    alterations: ["2", "6"],
+    essential: ["1", "2b", "3b"],
+    omissions: ["4", "5b", "6b", "7b"],
+    alterations: ["2", "3", "4#", "5b", "5", "6", "7"],
     category: "greek",
   },
   // Additional Modes for Ambiguous Cases
@@ -107,6 +105,67 @@ const MODES = {
     category: "interval",
   },
 };
+
+/**
+ * Maps enharmonic equivalents to standardized forms for consistent handling
+ * @param {string} degree - The scale degree to normalize
+ * @returns {string} The normalized scale degree
+ */
+function normalizeEnharmonics(degree) {
+  // First, define the semitone distances from the root for each scale degree
+  const SEMITONE_MAP = {
+    1: 0,
+    "2b": 1,
+    "1#": 1,
+    2: 2,
+    "3b": 3,
+    "2#": 3,
+    3: 4,
+    "4b": 4,
+    "3#": 5,
+    4: 5,
+    "5b": 6,
+    "4#": 6,
+    5: 7,
+    "6b": 8,
+    "5#": 8,
+    6: 9,
+    "7b": 10,
+    "6#": 10,
+    7: 11,
+    "7#": 0,
+  };
+
+  // If degree isn't in our map, return as is
+  if (!(degree in SEMITONE_MAP)) return degree;
+
+  // Get the semitone distance for this degree
+  const semitones = SEMITONE_MAP[degree];
+
+  // Special handling for Locrian mode: treat 5b and 4# as equivalent
+  if (degree === "5b" || degree === "4#") {
+    return "4#";
+  }
+
+  // Define preferred notation for each semitone distance
+  const PREFERRED_NOTATION = {
+    0: "1",
+    1: "2b",
+    2: "2",
+    3: "3b",
+    4: "3",
+    5: "4",
+    6: "4#", // Prefer #4 over b5 for consistency
+    7: "5",
+    8: "6b",
+    9: "6",
+    10: "7b",
+    11: "7",
+    12: "1",
+  };
+
+  return PREFERRED_NOTATION[semitones];
+}
 
 /**
  * Generates all possible rotations of intervals between consecutive notes
@@ -156,99 +215,298 @@ function generateRotations(degrees) {
 }
 
 /**
+ * Converts a scale degree to its semitone distance from the root
+ * @param {string} degree - The scale degree (e.g., "1", "2b", "3", "4#")
+ * @returns {number} The semitone distance from the root
+ */
+function degreeToSemitone(degree) {
+  const SEMITONE_MAP = {
+    1: 0,
+    "2b": 1,
+    "1#": 1,
+    2: 2,
+    "3b": 3,
+    "2#": 3,
+    3: 4,
+    "4b": 4,
+    "3#": 5,
+    4: 5,
+    "5b": 6,
+    "4#": 6,
+    5: 7,
+    "6b": 8,
+    "5#": 8,
+    6: 9,
+    "7b": 10,
+    "6#": 10,
+    7: 11,
+    "7#": 0,
+  };
+  return SEMITONE_MAP[degree];
+}
+
+/**
+ * Converts an array of scale degrees to an array of intervals
+ * @param {string[]} degrees - Array of scale degrees
+ * @returns {number[]} Array of intervals between consecutive notes
+ */
+function degreesToIntervals(degrees) {
+  if (!degrees || degrees.length === 0) return [];
+
+  const semitones = degrees.map(degreeToSemitone);
+  const intervals = [];
+
+  for (let i = 0; i < semitones.length; i++) {
+    const current = semitones[i];
+    const next = semitones[(i + 1) % semitones.length];
+    let interval = next - current;
+    if (interval <= 0) interval += 12;
+    intervals.push(interval);
+  }
+
+  return intervals;
+}
+
+/**
+ * Defines the characteristic intervals and patterns for each mode
+ */
+const MODE_CHARACTERISTICS = {
+  Ionian: {
+    pattern: [2, 2, 1, 2, 2, 2, 1],
+    essential: [4, 7, 11], // Major third, perfect fifth, major seventh
+    avoid: [3, 10], // Minor third, minor seventh
+    description: "The major scale. Bright and resolved sound.",
+  },
+  Dorian: {
+    pattern: [2, 1, 2, 2, 2, 1, 2],
+    essential: [3, 7, 9], // Minor third, perfect fifth, major sixth
+    avoid: [8], // Minor sixth
+    description: "Minor scale with raised 6th. Smooth, jazzy minor sound.",
+  },
+  Phrygian: {
+    pattern: [1, 2, 2, 2, 1, 2, 2],
+    essential: [1, 3, 8], // Minor second, minor third, minor sixth
+    avoid: [2, 9], // Major second, major sixth
+    description: "Minor scale with lowered 2nd. Spanish/Middle Eastern sound.",
+  },
+  Lydian: {
+    pattern: [2, 2, 2, 1, 2, 2, 1],
+    essential: [4, 6, 11], // Major third, augmented fourth, major seventh
+    avoid: [5], // Perfect fourth
+    description: "Major scale with raised 4th. Dreamy, floating quality.",
+  },
+  Mixolydian: {
+    pattern: [2, 2, 1, 2, 2, 1, 2],
+    essential: [4, 7, 10], // Major third, perfect fifth, minor seventh
+    avoid: [11], // Major seventh
+    description: "Major scale with lowered 7th. Bluesy, dominant sound.",
+  },
+  Aeolian: {
+    pattern: [2, 1, 2, 2, 1, 2, 2],
+    essential: [3, 7, 8], // Minor third, perfect fifth, minor sixth
+    avoid: [4, 9], // Major third, major sixth
+    description: "The natural minor scale. Melancholic sound.",
+  },
+  Locrian: {
+    pattern: [1, 2, 2, 1, 2, 2, 2],
+    essential: [1, 3, 6], // Minor second, minor third, diminished fifth
+    avoid: [7], // Perfect fifth
+    description: "Diminished scale with lowered 2nd and 5th.",
+  },
+};
+
+/**
  * Analyzes a single mode based on the given degrees
  */
 function analyzeSingleMode(degrees) {
-  if (!degrees || degrees.length === 0) return null;
-
-  // First check Greek modes
-  const greekModes = Object.values(MODES).filter(
-    (mode) => mode.category === "greek"
-  );
-
-  // First attempt: Try to match Greek modes
-  for (const mode of greekModes) {
-    // Check if all essential notes are present
-    const hasAllEssential = mode.essential.every((degree) =>
-      degrees.includes(degree)
-    );
-
-    if (!hasAllEssential) continue;
-
-    // Check if all provided degrees are either in pattern or alterations
-    const allDegreesValid = degrees.every(
-      (degree) =>
-        mode.pattern.includes(degree) || mode.alterations.includes(degree)
-    );
-
-    if (!allDegreesValid) continue;
-
-    // Identify alterations (notes that are not in the pattern but are in the alterations list)
-    const alterations = degrees.filter(
-      (degree) =>
-        !mode.pattern.includes(degree) && mode.alterations.includes(degree)
-    );
-
-    // Identify omissions (notes that are in the pattern but not in the selected degrees,
-    // and are allowed to be omitted according to the mode's omissions list)
-    const omissions = mode.pattern.filter(
-      (degree) => !degrees.includes(degree) && mode.omissions.includes(degree)
-    );
-
-    // Format the result string
-    let result = mode.name;
-
-    // Add omissions (e.g., "no2", "no4")
-    if (omissions.length > 0) {
-      result += " no" + omissions.join(" no");
-    }
-
-    // Add alterations (e.g., "4#", "7")
-    if (alterations.length > 0) {
-      result += " " + alterations.join(" ");
-    }
-
-    return result;
+  if (!degrees || degrees.length === 0) {
+    return "No notes selected";
   }
 
-  // If no Greek mode matches, check for interval-based modes if we have 2-3 notes
-  if (degrees.length <= 3) {
-    const intervalModes = Object.values(MODES).filter(
-      (mode) => mode.category === "interval"
-    );
-    for (const mode of intervalModes) {
-      const hasAllEssential = mode.essential.every((degree) =>
-        degrees.includes(degree)
-      );
-      if (hasAllEssential) {
-        let result = mode.name;
-        const alterations = degrees.filter(
-          (degree) =>
-            !mode.pattern.includes(degree) && mode.alterations.includes(degree)
-        );
-        if (alterations.length > 0) {
-          result += " " + alterations.join(" ");
-        }
-        return result;
+  // Special Locrian check before normalization
+  if (degrees.length === 7) {
+    const isLocrian =
+      degrees.includes("1") &&
+      degrees.includes("2b") &&
+      degrees.includes("3b") &&
+      degrees.includes("4") &&
+      (degrees.includes("5b") || degrees.includes("4#")) &&
+      degrees.includes("6b") &&
+      degrees.includes("7b");
+
+    if (isLocrian) {
+      return "Locrian";
+    }
+  }
+
+  // Normalize any enharmonic equivalents
+  const normalizedDegrees = degrees.map(normalizeEnharmonics);
+
+  // Check for conflicting degrees (except for 5b/4#)
+  const has5b = degrees.includes("5b");
+  const has4Sharp = degrees.includes("4#");
+
+  if (hasConflictingDegrees(degrees) && !(has5b && has4Sharp)) {
+    return "No matching mode found - conflicting degrees";
+  }
+
+  // Add another special Locrian check after normalization
+  if (normalizedDegrees.length === 7) {
+    const isLocrianAfterNormalization =
+      normalizedDegrees.includes("1") &&
+      normalizedDegrees.includes("2b") &&
+      normalizedDegrees.includes("3b") &&
+      normalizedDegrees.includes("4") &&
+      (normalizedDegrees.includes("5b") || normalizedDegrees.includes("4#")) &&
+      normalizedDegrees.includes("6b") &&
+      normalizedDegrees.includes("7b");
+
+    if (isLocrianAfterNormalization) {
+      return "Locrian";
+    }
+  }
+
+  // Convert degrees to semitones and calculate intervals
+  const intervals = degreesToIntervals(normalizedDegrees);
+  const semitones = normalizedDegrees.map(degreeToSemitone);
+
+  // For complete scales (7 notes)
+  if (normalizedDegrees.length === 7) {
+    // Check for Locrian mode
+    const locrianPattern = [1, 2, 2, 1, 2, 2, 2];
+    if (arraysEqual(intervals, locrianPattern)) {
+      return "Locrian";
+    }
+
+    // Check other modes
+    for (const [modeName, characteristics] of Object.entries(
+      MODE_CHARACTERISTICS
+    )) {
+      if (arraysEqual(intervals, characteristics.pattern)) {
+        return modeName;
       }
     }
+  }
+
+  // For incomplete scales
+  const intervalsFromRoot = semitones.map((s) => s % 12);
+  let bestMatch = null;
+  let highestScore = -Infinity;
+
+  for (const [modeName, characteristics] of Object.entries(
+    MODE_CHARACTERISTICS
+  )) {
+    let score = 0;
+
+    // Add points for essential intervals present
+    characteristics.essential.forEach((interval) => {
+      if (intervalsFromRoot.includes(interval)) score += 2;
+    });
+
+    // Subtract points for avoid notes present
+    characteristics.avoid.forEach((interval) => {
+      if (intervalsFromRoot.includes(interval)) score -= 1;
+    });
+
+    // Check for specific triads
+    if (normalizedDegrees.length === 3) {
+      if (
+        modeName === "Ionian" &&
+        normalizedDegrees.includes("1") &&
+        normalizedDegrees.includes("3") &&
+        normalizedDegrees.includes("5")
+      ) {
+        return "Ionian no2 no4 no6 no7";
+      }
+      if (
+        modeName === "Aeolian" &&
+        normalizedDegrees.includes("1") &&
+        normalizedDegrees.includes("3b") &&
+        normalizedDegrees.includes("5")
+      ) {
+        return "Aeolian no2 no4 no6 no7";
+      }
+    }
+
+    if (score > highestScore) {
+      highestScore = score;
+      bestMatch = modeName;
+    }
+  }
+
+  if (highestScore > 0) {
+    // Only add omissions for incomplete scales
+    if (normalizedDegrees.length < 7) {
+      const expectedDegrees = ["1", "2", "3", "4", "5", "6", "7"];
+      const omissions = expectedDegrees.filter(
+        (d) => !normalizedDegrees.includes(d)
+      );
+      return omissions.length > 0
+        ? `${bestMatch} no${omissions.join(" no")}`
+        : bestMatch;
+    }
+    return bestMatch;
   }
 
   return "No matching mode found";
 }
 
 /**
- * Analyzes all possible rotations of the selected notes and returns them as stacked modes
+ * Checks if a set of degrees contains conflicts
+ */
+function hasConflictingDegrees(degrees) {
+  // Special case: Allow 5b (diminished fifth) and 4# (augmented fourth) to co-exist
+  const has5b = degrees.includes("5b");
+  const has4Sharp = degrees.includes("4#");
+
+  // Extract base degrees (without accidentals)
+  const baseDegrees = degrees.map((d) => d.replace(/[#b]/, ""));
+
+  // Check for duplicate base degrees (except for 5b/4# case)
+  const uniqueBaseDegrees = new Set(baseDegrees);
+
+  if (uniqueBaseDegrees.size < baseDegrees.length) {
+    // Create a map to count occurrences of each base degree
+    const baseDegreeCounts = {};
+    baseDegrees.forEach((d) => {
+      baseDegreeCounts[d] = (baseDegreeCounts[d] || 0) + 1;
+    });
+
+    // If there are duplicates, check if they're only in our special cases
+    const duplicatedDegrees = Object.keys(baseDegreeCounts).filter(
+      (d) => baseDegreeCounts[d] > 1
+    );
+
+    // Special case: If the only conflicts involve 4 or 5, and we have either 4# or 5b, allow it
+    if (duplicatedDegrees.length === 1) {
+      const conflictDegree = duplicatedDegrees[0];
+      if (
+        (conflictDegree === "4" && has4Sharp) ||
+        (conflictDegree === "5" && has5b) ||
+        (conflictDegree === "4" && has5b) ||
+        (conflictDegree === "5" && has4Sharp)
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Analyzes all possible rotations of the selected notes
  */
 function analyzeAllRotations(selectedNotes) {
   if (selectedNotes.length === 0) return null;
 
-  // Get the selected degrees (scale degrees like 1, 2, 3b, etc.)
   const selectedDegrees = selectedNotes.map((note) =>
     note.getAttribute("data-third-nomenclature")
   );
 
-  // Mapping between numerical indices and scale degrees
+  // Create a standard mapping of indices to scale degrees
   const indexToDegree = {
     0: "1",
     1: "2b",
@@ -264,75 +522,113 @@ function analyzeAllRotations(selectedNotes) {
     11: "7",
   };
 
-  // Mapping between scale degrees and numerical indices
-  const degreeToIndex = {
-    1: 0,
-    "2b": 1,
-    2: 2,
-    "3b": 3,
-    3: 4,
-    4: 5,
-    "4#": 6,
-    5: 7,
-    "6b": 8,
-    6: 9,
-    "7b": 10,
-    7: 11,
-  };
+  // Special detection for typical complete major scale
+  if (selectedDegrees.length === 7) {
+    // Check if it's a complete major/minor scale
+    const majorDegrees = ["1", "2", "3", "4", "5", "6", "7"];
+    const majorFound = majorDegrees.every((deg) =>
+      selectedDegrees.includes(deg)
+    );
 
-  // Convert the selected degrees to numerical indices (0-11)
-  const selectedIndices = selectedDegrees.map(
-    (degree) => degreeToIndex[degree]
-  );
+    // If it's a complete major scale, we can calculate the rotations directly
+    if (majorFound) {
+      const results = [];
+      const rotations = [
+        { name: "Ionian", degrees: ["1", "2", "3", "4", "5", "6", "7"] },
+        { name: "Dorian", degrees: ["1", "2", "3b", "4", "5", "6", "7b"] },
+        { name: "Phrygian", degrees: ["1", "2b", "3b", "4", "5", "6b", "7b"] },
+        { name: "Lydian", degrees: ["1", "2", "3", "4#", "5", "6", "7"] },
+        { name: "Mixolydian", degrees: ["1", "2", "3", "4", "5", "6", "7b"] },
+        { name: "Aeolian", degrees: ["1", "2", "3b", "4", "5", "6b", "7b"] },
+        { name: "Locrian", degrees: ["1", "2b", "3b", "4", "4#", "6b", "7b"] },
+      ];
 
-  // Sort the indices in ascending order
-  selectedIndices.sort((a, b) => a - b);
+      for (let i = 0; i < rotations.length; i++) {
+        const rotation = rotations[i];
+        // Calculate semitone intervals
+        const intervals = degreesToIntervals(rotation.degrees);
 
-  // Calculate the intervals between consecutive notes
-  const intervals = [];
-  for (let i = 0; i < selectedIndices.length; i++) {
-    const current = selectedIndices[i];
-    const next = selectedIndices[(i + 1) % selectedIndices.length];
-    // Calculate interval (semitones) between current and next note
-    let interval = next - current;
-    if (interval < 0) {
-      interval += 12; // Wrap around the octave
+        results.push({
+          rotation: rotation.degrees.join(" "),
+          intervals: intervals.join(" "),
+          analysis: rotation.name,
+          index: i + 1,
+        });
+      }
+      return results;
     }
-    intervals.push(interval);
+
+    // Special case for Locrian
+    const isLocrian =
+      selectedDegrees.includes("1") &&
+      selectedDegrees.includes("2b") &&
+      selectedDegrees.includes("3b") &&
+      selectedDegrees.includes("4") &&
+      (selectedDegrees.includes("5b") || selectedDegrees.includes("4#")) &&
+      selectedDegrees.includes("6b") &&
+      selectedDegrees.includes("7b");
+
+    if (isLocrian) {
+      const intervals = degreesToIntervals(selectedDegrees);
+      return [
+        {
+          rotation: selectedDegrees.join(" "),
+          intervals: intervals.join(" "),
+          analysis: "Locrian",
+          index: 1,
+        },
+      ];
+    }
   }
 
-  // Generate all rotations of the intervals
-  const rotatedIntervals = [];
-  for (let i = 0; i < intervals.length; i++) {
-    rotatedIntervals.push([...intervals.slice(i), ...intervals.slice(0, i)]);
+  // Handle conflicting degrees for non-standard scales
+  if (hasConflictingDegrees(selectedDegrees)) {
+    return [
+      {
+        rotation: selectedDegrees.join(" "),
+        intervals: "Conflicting",
+        analysis: "No matching mode found - conflicting degrees",
+        index: 1,
+      },
+    ];
   }
 
-  // For each rotation, generate the corresponding mode
+  // Continue with the regular analysis for other scales
+  const intervals = degreesToIntervals(selectedDegrees);
   const results = [];
-  for (let i = 0; i < rotatedIntervals.length; i++) {
-    const rotation = rotatedIntervals[i];
 
-    // Start with index 0 (tonic/1)
+  for (let i = 0; i < intervals.length; i++) {
+    const rotation = [...intervals.slice(i), ...intervals.slice(0, i)];
     let currentIndex = 0;
     const modeIndices = [currentIndex];
 
-    // Generate the rest of the indices by adding intervals
     for (let j = 0; j < rotation.length - 1; j++) {
       currentIndex = (currentIndex + rotation[j]) % 12;
       modeIndices.push(currentIndex);
     }
 
-    // Convert indices back to scale degrees
     const modeDegrees = modeIndices.map((index) => indexToDegree[index]);
 
-    // Analyze the mode
+    // Special handling for Locrian mode
+    if (modeDegrees.length === 7) {
+      const locrianPattern = [1, 2, 2, 1, 2, 2, 2]; // Semitone intervals for Locrian
+      if (arraysEqual(rotation, locrianPattern)) {
+        results.push({
+          rotation: modeDegrees.join(" "),
+          intervals: rotation.join(" "),
+          analysis: "Locrian",
+          index: i + 1,
+        });
+        continue;
+      }
+    }
+
     const analysis = analyzeSingleMode(modeDegrees);
 
-    // Create a result object
     results.push({
       rotation: modeDegrees.join(" "),
       intervals: rotation.join(" "),
-      analysis: analysis,
+      analysis: analysis || "No matching mode found",
       index: i + 1,
     });
   }
@@ -341,162 +637,258 @@ function analyzeAllRotations(selectedNotes) {
 }
 
 /**
+ * Helper function to check if two arrays have the same elements
+ * @template T
+ * @param {T[]} arr1 - First array
+ * @param {T[]} arr2 - Second array
+ * @returns {boolean} True if arrays have the same elements in the same order
+ */
+function arraysEqual(arr1, arr2) {
+  if (!Array.isArray(arr1) || !Array.isArray(arr2)) return false;
+  if (arr1.length !== arr2.length) return false;
+  return arr1.every((element, index) => element === arr2[index]);
+}
+
+/**
  * Updates the modal result display with all rotations and their analyses
  */
 function updateModalResult(results) {
-  const modalResult = document.getElementById("modal-result");
+  const modalResultContainer = document.getElementById("modal-result");
 
-  if (!results || results.length === 0) {
-    modalResult.innerHTML = `
-      <div class="flex flex-col items-center justify-center min-h-[200px] text-center p-6">
-        <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
-        </svg>
-        <p class="text-lg text-gray-500 mb-2">No Notes Selected</p>
-        <p class="text-sm text-gray-400">Click on piano keys to select notes for analysis</p>
-        <div class="flex gap-2 mt-6">
-          <div class="flex items-center gap-1 text-xs text-gray-500">
-            <span class="w-3 h-3 rounded-full bg-green-100"></span>
-            <span>Greek Modes</span>
-          </div>
-          <div class="flex items-center gap-1 text-xs text-gray-500">
-            <span class="w-3 h-3 rounded-full bg-indigo-100"></span>
-            <span>Intervals</span>
-          </div>
-        </div>
-      </div>`;
-
-    // Hide the chord table container when no notes are selected
-    document.getElementById("chords-table-container").style.display = "none";
+  if (!results || results.length === 0 || !getSelectedNotes().length) {
+    document.getElementById("modal-result").innerHTML = `
+      <div class="flex flex-col items-center p-6 py-10">
+        <h3 class="text-2xl font-bold mb-4">Welcome to Modal Oracle</h3>
+        <p class="text-lg text-center">Select notes on the piano to see modal analysis results</p>
+      </div>
+    `;
     return;
   }
 
-  // Show the chord table container when notes are selected
-  document.getElementById("chords-table-container").style.display = "block";
+  // Create a modern table layout
+  let resultHTML = `
+    <div class="modern-results">
+      <div class="results-header">
+        <div class="results-title">Mode Analysis</div>
+        <div class="results-subtitle">${results.length} possible rotations found</div>
+      </div>
+      <div class="results-table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th class="rotation-col">Rotation</th>
+              <th class="mode-col">Mode</th>
+              <th class="notes-col">Notes</th>
+              <th class="intervals-col">Intervals</th>
+              <th class="actions-col"></th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
 
-  const resultHTML = results
-    .map((result, resultIndex) => {
-      const notesStr = result.rotation;
-      const intervalsStr = result.intervals;
-      const analysisType = result.analysis.startsWith("No matching")
-        ? "none"
-        : result.analysis.includes("Major 7") || result.analysis.includes("Sus")
-        ? "interval"
-        : "greek";
+  // Add each rotation as a table row
+  results.forEach((result, resultIndex) => {
+    const notesStr = result.rotation;
+    const intervalsStr = result.intervals;
 
-      const analysisClass = {
-        none: "text-gray-500",
-        interval: "text-indigo-600",
-        greek: "text-modal-success",
-      }[analysisType];
+    // Determine the type of analysis for styling
+    const analysisType = result.analysis.startsWith("No matching")
+      ? "none"
+      : result.analysis.includes("Major 7") || result.analysis.includes("Sus")
+      ? "interval"
+      : "greek";
 
-      const badge =
-        analysisType !== "none"
-          ? `
-        <span class="px-2 py-1 text-xs rounded-full ${
-          analysisType === "interval"
-            ? "bg-indigo-100 text-indigo-800"
-            : "bg-green-100 text-green-800"
-        }">
-          ${analysisType === "interval" ? "Interval" : "Greek Mode"}
-        </span>
-      `
-          : "";
+    const analysisClass = {
+      none: "analysis-none",
+      interval: "analysis-interval",
+      greek: "analysis-greek",
+    }[analysisType];
 
-      // Extract degrees from the rotation string (e.g., "1 2 3 4" -> ["1", "2", "3", "4"])
-      const degrees = notesStr.split(" ");
+    // Create a badge for the mode type
+    const badge =
+      analysisType !== "none"
+        ? `<span class="mode-badge ${
+            analysisType === "interval" ? "badge-interval" : "badge-greek"
+          }">${analysisType === "interval" ? "Interval" : "Mode"}</span>`
+        : "";
 
-      // Generate the alterations section with dropdowns for each degree
-      const alterationsSection = `
-        <details class="mt-3">
-          <summary class="cursor-pointer text-sm font-medium text-modal-primary hover:text-modal-primary/80 transition-colors">
-            Alterations
-          </summary>
-          <div class="pt-3">
-            <div class="alterations-warning hidden mb-3 bg-red-50 border border-red-200 text-red-600 rounded-md p-2 text-xs">
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3" data-rotation-index="${resultIndex}">
-              ${degrees
-                .map((degree, i) => {
-                  // Extract the base degree (e.g., "3b" -> "3")
-                  const baseDegree = degree.replace(/[#b]/, "");
-                  // Check if already has an alteration
-                  const currentAlteration = degree.includes("#")
-                    ? "sharp"
-                    : degree.includes("b")
-                    ? "flat"
-                    : "natural";
+    resultHTML += `
+      <tr class="result-row" data-rotation="${resultIndex}">
+        <td class="rotation-col">
+          <div class="rotation-number">${result.index}</div>
+        </td>
+        <td class="mode-col">
+          <div class="mode-name ${analysisClass}">${result.analysis}</div>
+          <div class="mode-badge-container">${badge}</div>
+        </td>
+        <td class="notes-col">
+          <div class="notes-display">${notesStr}</div>
+        </td>
+        <td class="intervals-col">
+          <div class="intervals-display">${intervalsStr}</div>
+        </td>
+        <td class="actions-col">
+          <button 
+            class="details-toggle"
+            data-rotation-index="${resultIndex}" 
+            onclick="toggleModeDetails(this, ${resultIndex})"
+          >
+            <svg class="details-icon" viewBox="0 0 24 24" width="18" height="18">
+              <path d="M7 10l5 5 5-5z" />
+            </svg>
+            <span>Details</span>
+          </button>
+        </td>
+      </tr>
+      <tr class="mode-details mode-details-${resultIndex} hidden">
+        <td colspan="5">
+          <div class="details-container">
+    `;
 
-                  return `
-                <div class="flex flex-col">
-                  <label class="text-xs text-gray-500 mb-1">Degree ${baseDegree}</label>
-                  <select 
-                    class="alteration-select border border-gray-300 rounded-md p-1 text-sm bg-white"
-                    data-degree="${baseDegree}"
-                    data-rotation-index="${resultIndex}"
-                  >
-                    <option value="natural" ${
-                      currentAlteration === "natural" ? "selected" : ""
-                    }>Natural</option>
-                    <option value="sharp" ${
-                      currentAlteration === "sharp" ? "selected" : ""
-                    }>♯</option>
-                    <option value="flat" ${
-                      currentAlteration === "flat" ? "selected" : ""
-                    }>♭</option>
-                  </select>
-                </div>
-                `;
-                })
-                .join("")}
-            </div>
+    // Mode description section (only for Greek modes)
+    if (analysisType === "greek") {
+      // Get just the mode name without alterations
+      const modeName = result.analysis.split(" ")[0];
+
+      // Mode descriptions
+      const modeDescriptions = {
+        Ionian:
+          "The major scale. Bright and resolved sound. Used for happy, triumphant themes.",
+        Dorian:
+          "Minor scale with raised 6th. Smooth, jazzy minor sound. Popular in jazz, rock, and folk.",
+        Phrygian:
+          "Minor scale with lowered 2nd. Spanish/Middle Eastern sound. Provides tension with b2.",
+        Lydian:
+          "Major scale with raised 4th. Dreamy, floating quality. Often used in film scores.",
+        Mixolydian:
+          "Major scale with lowered 7th. Bluesy, dominant 7th sound. Common in rock, blues.",
+        Aeolian:
+          "The natural minor scale. Melancholic, introspective. Used for sad, dramatic themes.",
+        Locrian:
+          "Diminished, unstable sound. Rare in practice. Features diminished 5th and minor 2nd.",
+      };
+
+      // Interval structures in whole and half steps
+      const modeIntervalStructures = {
+        Ionian: "W-W-H-W-W-W-H",
+        Dorian: "W-H-W-W-W-H-W",
+        Phrygian: "H-W-W-W-H-W-W",
+        Lydian: "W-W-W-H-W-W-H",
+        Mixolydian: "W-W-H-W-W-H-W",
+        Aeolian: "W-H-W-W-H-W-W",
+        Locrian: "H-W-W-H-W-W-W",
+      };
+
+      if (modeName in modeDescriptions) {
+        resultHTML += `
+          <div class="details-section">
+            <h4 class="details-heading">Description</h4>
+            <p class="details-text">${modeDescriptions[modeName]}</p>
+            <p class="details-subtext">Interval structure: ${modeIntervalStructures[modeName]}</p>
           </div>
-        </details>
-      `;
+        `;
+      }
+    }
 
-      return `
-        <div class="mode-rotation bg-white rounded-md p-4 mb-4 last:mb-0 border border-modal-border hover:shadow-md transition-shadow">
-          <div class="flex items-center gap-2 mb-3">
-            <span class="text-modal-primary font-semibold">Rotation ${result.index} (Mode)</span>
-            <div class="flex-1 h-px bg-modal-border"></div>
-            ${badge}
-          </div>
-          <div class="bg-modal-light rounded p-3 mb-2">
-            <div class="mb-2 font-mono text-sm">
-              <span class="text-gray-500">Notes:</span> <span class="font-medium rotation-notes">${notesStr}</span>
-            </div>
-            <div class="font-mono text-sm">
-              <span class="text-gray-500">Intervals:</span> <span class="font-medium rotation-intervals">${intervalsStr}</span>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 mt-3">
-            <span class="text-xs uppercase tracking-wider text-gray-500">Analysis:</span>
-            <span class="${analysisClass} font-semibold text-lg rotation-analysis">${result.analysis}</span>
-          </div>
-          ${alterationsSection}
-        </div>`;
-    })
-    .join("");
-
-  modalResult.innerHTML = `
-    <div class="space-y-4">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-semibold text-modal-primary">Mode Analysis</h2>
-        <div class="flex gap-2">
-          <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Greek Modes</span>
-          <span class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">Intervals</span>
+    // Build altered scale info if the result has alterations
+    if (result.analysis.includes("no") || /\d[b#]/.test(result.analysis)) {
+      resultHTML += `
+        <div class="details-section">
+          <h4 class="details-heading">Altered Scale</h4>
+          <p class="details-text">This is a non-standard scale with alterations or omissions.</p>
         </div>
-      </div>
-      <div class="font-medium text-sm mb-4 text-gray-600">
-        Showing all ${results.length} modes that can be derived from the selected notes
-      </div>
-      ${resultHTML}
-    </div>`;
+      `;
+    }
+
+    // Extract degrees from the rotation string
+    const degrees = notesStr.split(" ");
+
+    // Add scale degree modifications section
+    resultHTML += `
+      <div class="details-section">
+        <h4 class="details-heading">Modify Scale Degrees</h4>
+        <div class="alterations-warning hidden"></div>
+        <div class="alterations-grid" data-rotation-index="${resultIndex}">
+    `;
+
+    degrees.forEach((degree, i) => {
+      // Extract the base degree (e.g., "3b" -> "3")
+      const baseDegree = degree.replace(/[#b]/, "");
+      // Check if already has an alteration
+      const currentAlteration = degree.includes("#")
+        ? "sharp"
+        : degree.includes("b")
+        ? "flat"
+        : "natural";
+
+      resultHTML += `
+        <div class="alteration-control">
+          <label class="alteration-label">Degree ${baseDegree}</label>
+          <select 
+            class="alteration-select"
+            data-degree="${baseDegree}"
+            data-rotation-index="${resultIndex}"
+          >
+            <option value="natural" ${
+              currentAlteration === "natural" ? "selected" : ""
+            }>Natural</option>
+            <option value="sharp" ${
+              currentAlteration === "sharp" ? "selected" : ""
+            }>♯</option>
+            <option value="flat" ${
+              currentAlteration === "flat" ? "selected" : ""
+            }>♭</option>
+          </select>
+        </div>
+      `;
+    });
+
+    resultHTML += `
+          </div>
+        </div>
+      </td>
+    </tr>
+    `;
+  });
+
+  resultHTML += `
+        </tbody>
+      </table>
+    </div>
+  </div>
+  `;
+
+  modalResultContainer.innerHTML = resultHTML;
 
   // Add event listeners to the alteration selects
   document.querySelectorAll(".alteration-select").forEach((select) => {
     select.addEventListener("change", handleAlterationChange);
   });
+
+  // Add toggle function for mode details
+  window.toggleModeDetails = function (button, index) {
+    const detailsRow = document.querySelector(`.mode-details-${index}`);
+    const parentRow = document.querySelector(`tr[data-rotation="${index}"]`);
+    detailsRow.classList.toggle("hidden");
+
+    if (detailsRow.classList.contains("hidden")) {
+      button.innerHTML = `
+        <svg class="details-icon" viewBox="0 0 24 24" width="18" height="18">
+          <path d="M7 10l5 5 5-5z" />
+        </svg>
+        <span>Details</span>
+      `;
+      parentRow.classList.remove("expanded");
+    } else {
+      button.innerHTML = `
+        <svg class="details-icon rotated" viewBox="0 0 24 24" width="18" height="18">
+          <path d="M7 10l5 5 5-5z" />
+        </svg>
+        <span>Hide</span>
+      `;
+      parentRow.classList.add("expanded");
+    }
+  };
 }
 
 /**
@@ -514,18 +906,6 @@ async function noteClicked(note, octave) {
   const selectedNotes = document.querySelectorAll(".note-selector.selected");
   const results = analyzeAllRotations(Array.from(selectedNotes));
   updateModalResult(results);
-
-  const chordsNames = getChordsByNotes(getSelectedNotes()).map(
-    (chord) => chord.name
-  );
-
-  const cells = window.chordsTable.element.querySelectorAll("td[data-note]");
-  cells.forEach((cell) => {
-    const cellChord = cell.getAttribute("data-chord");
-    chordsNames.includes(cellChord)
-      ? cell.classList.add("chord-selected")
-      : cell.classList.remove("chord-selected");
-  });
 }
 
 /**
@@ -566,22 +946,6 @@ function getSelectedNotes() {
   const notes = Array.from(new Set(allNotes));
   const sortedNotes = notes.sort((a, b) => a.index - b.index);
   return sortedNotes;
-}
-
-/**
- * Filter all chords by a given set of notes
- *
- * @param {{name: string, index: number, octave: number, accidental: boolean}[]} notes - array of notes objects.
- * Example:
- *  [{name: 'C', index: 0, octave: 4, accidental: false},
- *  {name: 'Eb', index: 3, octave: 4, accidental: true}]
- * @returns {array} - array of chords that include the given notes
- */
-function getChordsByNotes(notes) {
-  if (notes.length === 0) return [];
-  return Object.values(CHORDS).filter((chord) => {
-    return notes.every((note) => chord.notes.includes(note.name));
-  });
 }
 
 /**
@@ -638,25 +1002,6 @@ function startFillPianoKeys(notes) {
   }
 }
 
-function startFillChordsTable(notes, chords) {
-  notes.forEach((note) => new window.chordsTable.Row(note));
-  Object.values(chords).forEach(
-    (chord) => new window.chordsTable.Column(chord, "Default group")
-  );
-  new window.chordsTable.Column(
-    { name: "My chord 1", notes: ["C", "E", "G"] },
-    "Custom group"
-  );
-  new window.chordsTable.Column(
-    { name: "My chord 2", notes: ["D", "F", "A"] },
-    "Custom group"
-  );
-  new window.chordsTable.Column(
-    { name: "My chord 3", notes: ["E", "G", "B"] },
-    "Custom group"
-  );
-}
-
 /**
  * Handles changes to alteration selects and updates the analysis
  */
@@ -667,7 +1012,7 @@ function handleAlterationChange(event) {
   const alteration = select.value;
 
   // Find the rotation container
-  const rotationContainer = select.closest(".mode-rotation");
+  const rotationContainer = select.closest(".modal-rotation");
 
   // Clear any previous warnings
   const warningElement = rotationContainer.querySelector(
@@ -677,7 +1022,9 @@ function handleAlterationChange(event) {
   warningElement.classList.add("hidden");
 
   // Get the current notes
-  const notesElement = rotationContainer.querySelector(".rotation-notes");
+  const notesElements = rotationContainer.querySelectorAll(".font-medium");
+  const notesElement = notesElements[0]; // First .font-medium contains notes
+  const intervalsElement = notesElements[1]; // Second .font-medium contains intervals
   const currentNotes = notesElement.textContent.split(" ");
 
   // Find the index of the degree in the current notes
@@ -740,10 +1087,7 @@ function handleAlterationChange(event) {
   notesElement.textContent = currentNotes.join(" ");
 
   // Re-analyze the scale with the updated notes
-  const intervalsElement = rotationContainer.querySelector(
-    ".rotation-intervals"
-  );
-  const analysisElement = rotationContainer.querySelector(".rotation-analysis");
+  const analysisElement = rotationContainer.querySelector("h3");
 
   // Calculate new intervals and analysis
   const newAnalysis = analyzeAlteredScale(currentNotes);
@@ -764,12 +1108,12 @@ function handleAlterationChange(event) {
   const analysisClass = {
     none: "text-gray-500",
     interval: "text-indigo-600",
-    greek: "text-modal-success",
+    greek: "text-green-600",
   }[analysisType];
 
   // Update analysis text and class
   analysisElement.textContent = newAnalysis.analysis;
-  analysisElement.className = `${analysisClass} font-semibold text-lg rotation-analysis`;
+  analysisElement.className = `text-lg font-semibold ${analysisClass}`;
 
   // Update piano key highlighting
   updatePianoKeyHighlighting(

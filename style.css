@@ -535,6 +535,25 @@ details[open] summary::before {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
   }
+
+  /* Modal result table styles */
+  #modal-result table {
+    font-size: 12px;
+  }
+
+  #modal-result .overflow-x-auto {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  #modal-result th,
+  #modal-result td {
+    padding: 6px 4px;
+  }
+
+  #modal-result .hidden {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -585,5 +604,372 @@ details[open] summary::before {
   .alterations-warning {
     font-size: 0.65rem;
     padding: 0.25rem 0.5rem;
+  }
+
+  /* Modal result table styles */
+  #modal-result table {
+    font-size: 11px;
+  }
+
+  #modal-result th,
+  #modal-result td {
+    padding: 4px 2px;
+  }
+
+  #modal-result th:nth-child(5),
+  #modal-result td:nth-child(5) {
+    width: 60px;
+  }
+}
+
+/* Modern Modal Results Styles */
+.modern-results {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.results-header {
+  background: linear-gradient(90deg, #2980b9, #3498db);
+  padding: 16px 20px;
+  color: white;
+}
+
+.results-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.results-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.results-table-container {
+  overflow-x: auto;
+  max-height: 70vh;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.results-table th {
+  background-color: #f5f7fa;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.results-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.result-row {
+  transition: background-color 0.2s ease;
+}
+
+.result-row:hover {
+  background-color: #f8fafc;
+}
+
+.result-row.expanded {
+  background-color: #f1f5f9;
+}
+
+.rotation-col {
+  width: 80px;
+}
+
+.rotation-number {
+  background-color: #e2e8f0;
+  color: #475569;
+  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.mode-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.analysis-none {
+  color: #94a3b8;
+}
+
+.analysis-interval {
+  color: #6366f1;
+}
+
+.analysis-greek {
+  color: #10b981;
+}
+
+.mode-badge-container {
+  display: flex;
+  align-items: center;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-interval {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+}
+
+.badge-greek {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.notes-display,
+.intervals-display {
+  font-family: monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+  background: #f8fafc;
+  padding: 6px 10px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.actions-col {
+  width: 100px;
+  text-align: center;
+}
+
+.details-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: #f1f5f9;
+  color: #2563eb;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.details-toggle:hover {
+  background-color: #e0e7ff;
+  border-color: #c7d2fe;
+}
+
+.details-icon {
+  fill: currentColor;
+  transition: transform 0.2s ease;
+}
+
+.details-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.details-container {
+  padding: 16px 20px;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.details-section {
+  margin-bottom: 18px;
+}
+
+.details-section:last-child {
+  margin-bottom: 0;
+}
+
+.details-heading {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.details-text {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.details-subtext {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.alterations-warning {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #ef4444;
+  font-size: 0.75rem;
+}
+
+.alterations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.alteration-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alteration-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.alteration-select {
+  background-color: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  color: #334155;
+  transition: all 0.15s ease;
+}
+
+.alteration-select:hover {
+  border-color: #94a3b8;
+}
+
+.alteration-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  outline: none;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Responsive Styles for Modern UI */
+@media (max-width: 768px) {
+  .results-header {
+    padding: 12px 16px;
+  }
+
+  .results-title {
+    font-size: 1.1rem;
+  }
+
+  .results-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 8px 12px;
+  }
+
+  .rotation-number {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .mode-name {
+    font-size: 0.85rem;
+  }
+
+  .alterations-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .results-header {
+    padding: 10px 12px;
+  }
+
+  .results-title {
+    font-size: 1rem;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 6px 8px;
+  }
+
+  .notes-display,
+  .intervals-display {
+    font-size: 0.8rem;
+    padding: 4px 6px;
+  }
+
+  .mode-badge {
+    font-size: 0.6rem;
+    padding: 1px 6px;
+  }
+
+  .details-toggle {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+
+  .details-container {
+    padding: 12px;
+  }
+
+  .details-heading {
+    font-size: 0.8rem;
+  }
+
+  .details-text {
+    font-size: 0.75rem;
+  }
+
+  .alterations-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+  }
+
+  .alteration-select {
+    padding: 4px 6px;
+    font-size: 0.75rem;
   }
 }

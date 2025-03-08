@@ -32,7 +32,6 @@
     <script type="module" src="module.js"></script>
     <script src="data.js"></script>
     <script src="utils.js"></script>
-    <script src="chord-table.js"></script>
     <script src="script.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -55,37 +54,8 @@
       <div id="modal-result-container" class="flex justify-center mt-8 px-4">
         <div
           id="modal-result"
-          class="w-full max-w-4xl bg-white rounded-lg shadow-lg p-6"
+          class="w-full max-w-4xl bg-white rounded-lg shadow-lg"
         ></div>
-      </div>
-      <div id="chords-table-container">
-        <h2 class="section-title">Chord Analysis</h2>
-        <table id="chords-table">
-          <thead>
-            <tr class="header-groups">
-              <th rowspan="2" class="notes-header" title="Musical Notes">
-                <svg
-                  viewBox="0 0 24 24"
-                  width="20"
-                  height="20"
-                  fill="currentColor"
-                  class="note-icon"
-                >
-                  <path
-                    d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
-                  />
-                </svg>
-              </th>
-              <th colspan="1" data-group="Default group">Default group</th>
-              <th colspan="1" data-group="Custom group">Custom group</th>
-            </tr>
-            <!-- chords names go here -->
-            <tr class="header-chords">
-              <th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
       </div>
     </div>
   </body>

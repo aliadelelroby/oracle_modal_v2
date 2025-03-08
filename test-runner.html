@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modal Oracle - Test Runner</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        line-height: 1.6;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 20px;
+        color: #333;
+      }
+      h1 {
+        color: #2980b9;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+      }
+      button {
+        background-color: #2980b9;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-bottom: 20px;
+      }
+      button:hover {
+        background-color: #3498db;
+      }
+      #test-output {
+        background-color: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        margin-top: 20px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        min-height: 200px;
+        max-height: 500px;
+        overflow-y: auto;
+      }
+      .results-summary {
+        display: flex;
+        margin-top: 20px;
+        gap: 20px;
+      }
+      .result-box {
+        flex: 1;
+        padding: 15px;
+        border-radius: 4px;
+        text-align: center;
+      }
+      .result-box.total {
+        background-color: #eee;
+      }
+      .result-box.passed {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .result-box.failed {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      .result-value {
+        font-size: 32px;
+        font-weight: bold;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+
+    <!-- Mock Tone.js for testing -->
+    <script>
+      // Mock Tone object before loading script.js
+      window.Tone = {
+        Synth: function () {
+          return {
+            toDestination: function () {
+              return this;
+            },
+            triggerAttackRelease: function () {},
+          };
+        },
+      };
+
+      // Create DOM elements that script.js depends on
+      document.addEventListener("DOMContentLoaded", function () {
+        // Create piano-keys element
+        const pianoContainer = document.createElement("div");
+        pianoContainer.id = "piano-container";
+        const pianoKeys = document.createElement("div");
+        pianoKeys.id = "piano-keys";
+        pianoContainer.appendChild(pianoKeys);
+        document.body.appendChild(pianoContainer);
+
+        // Create chords-table-container
+        const chordsTableContainer = document.createElement("div");
+        chordsTableContainer.id = "chords-table-container";
+        document.body.appendChild(chordsTableContainer);
+
+        // Create modal-result element
+        const modalResult = document.createElement("div");
+        modalResult.id = "modal-result";
+        document.body.appendChild(modalResult);
+
+        // Mock chordsTable
+        window.chordsTable = {
+          element: document.createElement("table"),
+          Row: function () {},
+          Column: function () {},
+        };
+      });
+
+      // Override startFillPianoKeys to prevent DOM manipulation errors
+      window.startFillPianoKeys = function () {
+        console.log("Mock startFillPianoKeys called");
+      };
+      window.startFillChordsTable = function () {
+        console.log("Mock startFillChordsTable called");
+      };
+    </script>
+  </head>
+  <body>
+    <h1>Modal Oracle - Test Runner</h1>
+
+    <p>
+      This page runs tests against the modal analysis functionality to ensure it
+      correctly identifies musical modes according to standard music theory.
+    </p>
+
+    <button id="run-tests">Run All Tests</button>
+
+    <div id="results-summary" class="results-summary hidden">
+      <div class="result-box total">
+        <div class="result-label">Total Tests</div>
+        <div class="result-value" id="total-tests">0</div>
+      </div>
+      <div class="result-box passed">
+        <div class="result-label">Passed</div>
+        <div class="result-value" id="passed-tests">0</div>
+      </div>
+      <div class="result-box failed">
+        <div class="result-label">Failed</div>
+        <div class="result-value" id="failed-tests">0</div>
+      </div>
+    </div>
+
+    <div id="test-output"></div>
+
+    <!-- Include core scripts needed for testing -->
+    <script src="data.js"></script>
+    <script src="utils.js"></script>
+    <script src="script.js"></script>
+
+    <!-- Include the test script -->
+    <script src="tests.js"></script>
+
+    <script>
+      // Override console.log and console.error to capture test output
+      const testOutput = document.getElementById("test-output");
+      const originalConsoleLog = console.log;
+      const originalConsoleError = console.error;
+
+      console.log = function () {
+        const args = Array.from(arguments);
+        testOutput.innerHTML += args.join(" ") + "<br>";
+        originalConsoleLog.apply(console, args);
+      };
+
+      console.error = function () {
+        const args = Array.from(arguments);
+        testOutput.innerHTML +=
+          '<span style="color: red;">' + args.join(" ") + "</span><br>";
+        originalConsoleError.apply(console, args);
+      };
+
+      // Provide access to script.js functions for the tests
+      function exposeScriptFunctions() {
+        // Make script.js functions available to tests
+        if (window.modalTests) {
+          console.log("Exposing script.js functions to tests");
+          try {
+            // Log available functions for debugging
+            console.log("Available functions in script.js:");
+            console.log(
+              "- normalizeEnharmonics:",
+              typeof normalizeEnharmonics === "function"
+            );
+            console.log(
+              "- hasConflictingDegrees:",
+              typeof hasConflictingDegrees === "function"
+            );
+            console.log(
+              "- analyzeSingleMode:",
+              typeof analyzeSingleMode === "function"
+            );
+            console.log(
+              "- analyzeAllRotations:",
+              typeof analyzeAllRotations === "function"
+            );
+            console.log("- arraysEqual:", typeof arraysEqual === "function");
+          } catch (e) {
+            console.error("Error while exposing functions:", e);
+          }
+        }
+      }
+
+      // Set up the run button
+      document
+        .getElementById("run-tests")
+        .addEventListener("click", function () {
+          testOutput.innerHTML = ""; // Clear previous output
+
+          // Expose script.js functions to tests
+          exposeScriptFunctions();
+
+          // Run the tests
+          const results = window.modalTests.runAllTests();
+
+          // Update the results summary
+          document.getElementById("total-tests").textContent = results.total;
+          document.getElementById("passed-tests").textContent = results.passed;
+          document.getElementById("failed-tests").textContent = results.failed;
+          document.getElementById("results-summary").classList.remove("hidden");
+        });
+    </script>
+  </body>
+</html>
