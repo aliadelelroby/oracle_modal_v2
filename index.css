@@ -1,0 +1,68 @@
+body {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.container {
+    width: 100vw;
+    height: 100vh;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 16px;
+}
+
+.body {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 4px 2px rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    min-width: 300px;
+}
+
+.input-number-label {
+    font-size: 20px;
+    text-align: center;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.input-number {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.item * {
+    font-size: 16px;
+}
+
+.item {
+    margin: 10px 0;
+    padding: 5px 20px;
+    width: calc(50% - 40px);
+}
+
+.item:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.input-button {
+    text-align: center;
+}
+
+.input-button input[type=button] {
+    min-width: 150px;
+    margin: 10px;
+    padding: 5px;
+    text-align: center;
+}
+
+.select-result {
+    font-size: 16px;
+    height: 70px;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: rgba(0, 255, 255, 0.3);
+    box-shadow: 0px 1px 2px 1px rgba(0, 100, 150, 1);
+}
