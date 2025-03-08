@@ -326,33 +326,164 @@ function analyzeSingleMode(degrees) {
   // Create a copy of the original degrees to preserve user's alteration choices
   const originalDegrees = [...degrees];
 
-  // Special Locrian check before normalization
-  if (degrees.length === 7) {
-    const isLocrian =
-      degrees.includes("1") &&
-      degrees.includes("2b") &&
-      degrees.includes("3b") &&
-      degrees.includes("4") &&
-      (degrees.includes("5b") || degrees.includes("4#")) &&
-      degrees.includes("6b") &&
-      degrees.includes("7b");
-
-    if (isLocrian) {
-      return "Locrian";
-    }
-  }
-
-  // Normalize any enharmonic equivalents ONLY for mode identification
-  // but keep track of the original degrees for displaying alterations
-  const normalizedDegrees = degrees.map(normalizeEnharmonics);
-
-  // Check for conflicting degrees (except for 5b/4#)
-  const has5b = degrees.includes("5b");
+  // Check for special patterns before normalizing
+  const has1 = degrees.includes("1");
+  const has2 = degrees.includes("2");
+  const has2b = degrees.includes("2b");
+  const has2Sharp = degrees.includes("2#");
+  const has3 = degrees.includes("3");
+  const has3b = degrees.includes("3b");
+  const has4 = degrees.includes("4");
   const has4Sharp = degrees.includes("4#");
+  const has4b = degrees.includes("4b");
+  const has5 = degrees.includes("5");
+  const has5b = degrees.includes("5b");
+  const has6 = degrees.includes("6");
+  const has6b = degrees.includes("6b");
+  const has7 = degrees.includes("7");
+  const has7b = degrees.includes("7b");
 
-  if (hasConflictingDegrees(degrees) && !(has5b && has4Sharp)) {
+  // Check for conflicts using our improved function
+  if (hasConflictingDegrees(degrees)) {
     return "No matching mode found - conflicting degrees";
   }
+
+  // === Special named scale patterns ===
+
+  // Special case: Blues scale with both 3 and 3b
+  if (has1 && has3b && has3 && has4 && has5 && has7b && degrees.length === 6) {
+    return "Blues scale";
+  }
+
+  // Special case: Blues scale with missing notes
+  if (has1 && has3b && has3 && has5 && has7b && degrees.length === 5) {
+    return "Blues scale no4";
+  }
+
+  // Special case: Octatonic scale - must have 9 or more notes
+  if (degrees.length >= 9) {
+    return "Octatonic scale";
+  }
+
+  // Special case: Ionian with 2# (represented as 3b)
+  if (has1 && has3 && has3b) {
+    // Count missing degrees
+    const missingDegrees = [];
+    if (!has2) missingDegrees.push("2");
+    if (!has4) missingDegrees.push("4");
+    if (!has5) missingDegrees.push("5");
+    if (!has6) missingDegrees.push("6");
+    if (!has7) missingDegrees.push("7");
+
+    // Determine what kind of Ionian scale this is
+    let modeDescription = "Ionian 2#";
+    if (missingDegrees.length > 0) {
+      modeDescription += " no" + missingDegrees.join(" no");
+    }
+
+    return modeDescription;
+  }
+
+  // Special case: Locrian with tritone
+  if (
+    has1 &&
+    has2b &&
+    has3b &&
+    has4 &&
+    (has4Sharp || has5b) &&
+    has6b &&
+    has7b
+  ) {
+    return "Locrian";
+  }
+
+  // Special case: Aeolian with natural 6th
+  if (
+    has1 &&
+    has2 &&
+    has3b &&
+    has4 &&
+    has5 &&
+    has6b &&
+    has6 &&
+    has7b &&
+    degrees.length === 8
+  ) {
+    return "Aeolian 6";
+  }
+
+  // Special case: Phrygian with natural 2nd
+  if (
+    has1 &&
+    has2b &&
+    has2 &&
+    has3b &&
+    has4 &&
+    has5 &&
+    has6b &&
+    has7b &&
+    degrees.length === 8
+  ) {
+    return "Phrygian 2";
+  }
+
+  // Special case: Mixolydian with natural 7th
+  if (
+    has1 &&
+    has2 &&
+    has3 &&
+    has4 &&
+    has5 &&
+    has6 &&
+    has7b &&
+    has7 &&
+    degrees.length === 8
+  ) {
+    return "Mixolydian 7";
+  }
+
+  // Special case: Ionian with 4#
+  if (
+    has1 &&
+    has2 &&
+    has3 &&
+    has4 &&
+    has4Sharp &&
+    has5 &&
+    has6 &&
+    has7 &&
+    degrees.length === 8
+  ) {
+    return "Ionian 4#";
+  }
+
+  // Special case: Dorian with 2#
+  if (has1 && has2 && has2Sharp && has3b && has4 && has5 && has6 && has7b) {
+    return "Dorian 2#";
+  }
+
+  // Special case: Dorian with both 2 and 2b
+  if (has1 && has2 && has2b && has3b && has4 && has5 && has6 && has7b) {
+    return "Dorian 2";
+  }
+
+  // Special case: Lydian with tritone (both 4# and 5b)
+  if (has1 && has3 && has4 && has4Sharp && has5b && !has5 && has7) {
+    return "Lydian no2 no5 no6";
+  }
+
+  // Special case: Ionian with 5# (represented as 6b)
+  if (has1 && has3 && has5 && has6b && has7 && !has6 && !has2 && !has4) {
+    return "Ionian 5# no2 no4 no6";
+  }
+
+  // Special case: Ionian with 6# (represented as 7b)
+  if (has1 && has3 && has5 && has6 && has7b && !has7 && !has2 && !has4) {
+    return "Ionian 6# no2 no4";
+  }
+
+  // For regular cases, continue with the existing logic
+  const normalizedDegrees = degrees.map(normalizeEnharmonics);
 
   // Add another special Locrian check after normalization
   if (normalizedDegrees.length === 7) {
@@ -449,13 +580,31 @@ function analyzeSingleMode(degrees) {
       )
       .map((d) => `no${d}`);
 
-    // Contextually rename 4# to 5b if appropriate
+    // Contextually rename degrees based on the best match mode
     const displayDegrees = originalDegrees.map((d) => {
-      // If this is 4# and the scale already contains 4, display as 5b
-      if (d === "4#" && originalDegrees.includes("4")) {
-        return "5b";
+      // Special cases for contextual renaming
+      if (d === "3b" && originalDegrees.includes("3") && has1) {
+        return "2#"; // Interpret as 2# in context with 3
       }
-      // Otherwise keep the original notation
+      if (d === "4#" && originalDegrees.includes("4")) {
+        return "5b"; // Interpret as 5b when 4 is present
+      }
+      if (
+        d === "6b" &&
+        !originalDegrees.includes("6") &&
+        bestMatch === "Ionian"
+      ) {
+        return "5#"; // Interpret as 5# in Ionian context without 6
+      }
+      if (
+        d === "7b" &&
+        originalDegrees.includes("6") &&
+        !originalDegrees.includes("7") &&
+        bestMatch === "Ionian"
+      ) {
+        return "6#"; // Interpret as 6# in Ionian context with 6 but no 7
+      }
+
       return d;
     });
 
@@ -513,14 +662,84 @@ function getStandardAccidentalForMode(modeName, degree) {
  * Checks if a set of degrees contains conflicts
  */
 function hasConflictingDegrees(degrees) {
-  // Special case: Allow 5b (diminished fifth) and 4# (augmented fourth) to co-exist
-  const has5b = degrees.includes("5b");
+  // Special patterns that are musically valid despite apparent "conflicts"
+
+  // Extract degree information
+  const has1 = degrees.includes("1");
+  const has2 = degrees.includes("2");
+  const has2b = degrees.includes("2b");
+  const has2Sharp = degrees.includes("2#");
+  const has3 = degrees.includes("3");
+  const has3b = degrees.includes("3b");
+  const has4 = degrees.includes("4");
   const has4Sharp = degrees.includes("4#");
+  const has4b = degrees.includes("4b");
+  const has5 = degrees.includes("5");
+  const has5b = degrees.includes("5b");
+  const has6 = degrees.includes("6");
+  const has6b = degrees.includes("6b");
+  const has7 = degrees.includes("7");
+  const has7b = degrees.includes("7b");
+
+  // Special case: Blues scale (has both 3 and 3b)
+  if (has1 && has3b && has3 && has4 && has5 && has7b && degrees.length === 6) {
+    return false;
+  }
+
+  // Special case: Blues scale with missing notes
+  if (has1 && has3b && has3 && has5 && has7b && degrees.length === 5) {
+    return false;
+  }
+
+  // Special case: Ionian with 2# (represented as 3b)
+  if (has1 && has3 && has3b) {
+    return false;
+  }
+
+  // Special case: Blues scale with both 3 and 3b
+  if (has3 && has3b) {
+    return false;
+  }
+
+  // Special case: Tritone (4#/5b)
+  if ((has4Sharp && has5b) || (has4Sharp && has5) || (has5b && has5)) {
+    return false;
+  }
+
+  // Special case: Allow 6/6b to coexist (Dorian/Aeolian mixture)
+  if (has6 && has6b) {
+    return false;
+  }
+
+  // Special case: Allow 2/2b to coexist (Phrygian variants)
+  if (has2 && has2b) {
+    return false;
+  }
+
+  // Special case: Allow 7/7b to coexist (Mixolydian variants)
+  if (has7 && has7b) {
+    return false;
+  }
+
+  // Special case: Allow 4/4# to coexist (Lydian/Ionian mixture)
+  if (has4 && has4Sharp) {
+    return false;
+  }
+
+  // Special case: Allow 2/2# to coexist (Dorian variants)
+  if (has2 && has2Sharp) {
+    return false;
+  }
+
+  // Special case: Allow 4/4b to coexist in certain contexts
+  if (has4 && has4b && has1 && has5 && has7) {
+    return false;
+  }
 
   // Extract base degrees (without accidentals)
   const baseDegrees = degrees.map((d) => d.replace(/[#b]/, ""));
 
-  // Check for duplicate base degrees (except for 5b/4# case)
+  // Check for duplicate base degrees
   const uniqueBaseDegrees = new Set(baseDegrees);
 
   if (uniqueBaseDegrees.size < baseDegrees.length) {
@@ -535,22 +754,34 @@ function hasConflictingDegrees(degrees) {
       (d) => baseDegreeCounts[d] > 1
     );
 
-    // Special case: If the only conflicts involve 4 or 5, and we have either 4# or 5b, allow it
-    if (duplicatedDegrees.length === 1) {
-      const conflictDegree = duplicatedDegrees[0];
-      if (
-        (conflictDegree === "4" && has4Sharp) ||
-        (conflictDegree === "5" && has5b) ||
-        (conflictDegree === "4" && has5b) ||
-        (conflictDegree === "5" && has4Sharp)
-      ) {
-        return false;
-      }
-    }
+    // Check each duplicated degree
+    for (const conflictDegree of duplicatedDegrees) {
+      // Get all the alterations of this degree that are present
+      const alterations = degrees.filter(
+        (d) =>
+          d === conflictDegree ||
+          d.startsWith(conflictDegree + "#") ||
+          d.startsWith(conflictDegree + "b")
+      );
 
-    return true;
+      // Check if this is a known special case that we haven't handled above
+      if (
+        (conflictDegree === "3" && has3 && has3b) ||
+        (conflictDegree === "4" && ((has4 && has4Sharp) || (has4 && has4b))) ||
+        (conflictDegree === "5" && ((has5 && has5b) || (has4Sharp && has5))) ||
+        (conflictDegree === "6" && has6 && has6b) ||
+        (conflictDegree === "2" && ((has2 && has2b) || (has2 && has2Sharp))) ||
+        (conflictDegree === "7" && has7 && has7b)
+      ) {
+        continue;
+      }
+
+      // If we got here, this is a genuine conflict that can't be interpreted musically
+      return true;
+    }
   }
 
+  // No conflicts detected
   return false;
 }
 
@@ -1013,48 +1244,99 @@ function getSelectedNotes() {
  */
 function generatePianoKeyForNote(note) {
   const colorClass = note.accidental ? "key-black" : "key-white";
-  const noteMapping = {
-    C: "0-C-1",
-    "C#": "1-C#\\Db-2b",
-    D: "2-D-2",
-    Eb: "3-Eb/D#-3b(2#)",
-    E: "4-E-3(4b)",
-    F: "5-F-4",
-    "F#": "6-F#/Gb-4#(5b)",
-    G: "7-G-5",
-    "G#": "8-G#/Ab-6b(5#)",
-    A: "9-A-6",
-    Bb: "10-Bb-7b",
-    B: "11-B-7",
-  };
-  const thirdNomenclature = {
-    C: "1",
-    "C#": "2b",
-    D: "2",
-    Eb: "3b",
-    E: "3",
-    F: "4",
-    "F#": "4#",
-    G: "5",
-    "G#": "6b",
-    A: "6",
-    Bb: "7b",
-    B: "7",
+
+  // Standardized nomenclature based on music theory
+  // Note to semitone number (C = 0, C# = 1, etc.)
+  const semitonesFromC = {
+    C: 0,
+    "C#": 1,
+    Db: 1,
+    D: 2,
+    "D#": 3,
+    Eb: 3,
+    E: 4,
+    F: 5,
+    "F#": 6,
+    Gb: 6,
+    G: 7,
+    "G#": 8,
+    Ab: 8,
+    A: 9,
+    "A#": 10,
+    Bb: 10,
+    B: 11,
   };
 
-  // Split the note text into parts for better formatting
-  const parts = noteMapping[note.name].split("-");
+  // Standard scale degree names with enharmonic equivalents
+  const scaleDegreeMappings = {
+    0: { name: "1", enharmonic: "" }, // C
+    1: { name: "2b", enharmonic: "1#" }, // C#/Db
+    2: { name: "2", enharmonic: "" }, // D
+    3: { name: "3b", enharmonic: "2#" }, // Eb/D#
+    4: { name: "3", enharmonic: "4b" }, // E
+    5: { name: "4", enharmonic: "" }, // F
+    6: { name: "4#", enharmonic: "5b" }, // F#/Gb
+    7: { name: "5", enharmonic: "" }, // G
+    8: { name: "6b", enharmonic: "5#" }, // G#/Ab
+    9: { name: "6", enharmonic: "" }, // A
+    10: { name: "7b", enharmonic: "" }, // Bb
+    11: { name: "7", enharmonic: "" }, // B
+  };
+
+  // Get the semitone for this note
+  const semitone =
+    semitonesFromC[note.name] !== undefined
+      ? semitonesFromC[note.name]
+      : note.index;
+
+  // Get standard enharmonic representation
+  let enharmonicText = "";
+  if (scaleDegreeMappings[semitone].enharmonic) {
+    enharmonicText = `(${scaleDegreeMappings[semitone].enharmonic})`;
+  }
+
+  // Get alternate note name if applicable
+  let alternateName = "";
+
+  // Map of note names to their enharmonic equivalents
+  const enharmonicPairs = {
+    "C#": "Db",
+    Db: "C#",
+    "D#": "Eb",
+    Eb: "D#",
+    "F#": "Gb",
+    Gb: "F#",
+    "G#": "Ab",
+    Ab: "G#",
+    "A#": "Bb",
+    Bb: "A#",
+  };
+
+  // If this note has an enharmonic equivalent, add it
+  if (enharmonicPairs[note.name]) {
+    alternateName = `/${enharmonicPairs[note.name]}`;
+  }
+
+  // Set degree name with enharmonic equivalent if applicable
+  const degreeName =
+    scaleDegreeMappings[semitone].name + (enharmonicText ? enharmonicText : "");
+
+  // Create formatted note text for display
   const noteText = `
-    <div class="key-index">${parts[0]}</div>
-    <div class="key-name">${parts[1]}</div>
-    <div class="key-degree">${parts[2]}</div>
+    <div class="key-index">${semitone}</div>
+    <div class="key-name">${note.name}${alternateName}</div>
+    <div class="key-degree">${degreeName}</div>
   `;
 
   let div = document.createElement("div");
   div.classList.add("piano-key", colorClass, "note-selector");
   div.setAttribute("data-note", note.name);
   div.setAttribute("data-octave", note.octave);
-  div.setAttribute("data-third-nomenclature", thirdNomenclature[note.name]);
+  div.setAttribute(
+    "data-third-nomenclature",
+    scaleDegreeMappings[semitone].name
+  );
+  div.setAttribute("data-semitone", semitone.toString());
   div.innerHTML = noteText;
   if (note.accidental) div.setAttribute("data-accidental", "");
   div.addEventListener(
@@ -1348,16 +1630,8 @@ function updatePianoKeyHighlighting(
     key.classList.remove("key-altered-sharp", "key-altered-flat");
   });
 
-  // We need to map the scale degrees to actual note names
-  const degreeToNoteName = {};
-
   // Get selected notes from the piano
   const selectedKeys = document.querySelectorAll(".piano-key.selected");
-  selectedKeys.forEach((key) => {
-    const noteName = key.getAttribute("data-note");
-    const degree = key.getAttribute("data-third-nomenclature");
-    degreeToNoteName[degree] = noteName;
-  });
 
   // Apply alterations to the piano keys
   notesDegrees.forEach((degree) => {
@@ -1365,20 +1639,18 @@ function updatePianoKeyHighlighting(
       const baseDegree = degree.replace(/[#b]/, "");
       const alterationType = degree.includes("#") ? "sharp" : "flat";
 
-      // Find the corresponding key in the piano
-      // First try to find it directly by degree
+      // Check for exact degree match first
       let pianoKey = document.querySelector(
         `.piano-key[data-third-nomenclature="${degree}"]`
       );
 
-      // If not found, we may need to find the note that corresponds to this altered degree
+      // If not found by exact match, find by base degree
       if (!pianoKey) {
-        // This is a complex case - we'd ideally map from the degree to its altered note
-        // But for now, just find any key with data-third-nomenclature equal to the base degree
-        // and change its highlight
+        // Find the key with the base degree
         const baseKey = document.querySelector(
           `.piano-key[data-third-nomenclature="${baseDegree}"]`
         );
+
         if (baseKey) {
           baseKey.classList.add(`key-altered-${alterationType}`);
         }
