@@ -323,6 +323,9 @@ function analyzeSingleMode(degrees) {
     return "No notes selected";
   }
 
+  // Create a copy of the original degrees to preserve user's alteration choices
+  const originalDegrees = [...degrees];
+
   // Special Locrian check before normalization
   if (degrees.length === 7) {
     const isLocrian =
@@ -339,7 +342,8 @@ function analyzeSingleMode(degrees) {
     }
   }
 
-  // Normalize any enharmonic equivalents
+  // Normalize any enharmonic equivalents ONLY for mode identification
+  // but keep track of the original degrees for displaying alterations
   const normalizedDegrees = degrees.map(normalizeEnharmonics);
 
   // Check for conflicting degrees (except for 5b/4#)
@@ -434,21 +438,75 @@ function analyzeSingleMode(degrees) {
     }
   }
 
-  if (highestScore > 0) {
-    // Only add omissions for incomplete scales
-    if (normalizedDegrees.length < 7) {
-      const expectedDegrees = ["1", "2", "3", "4", "5", "6", "7"];
-      const omissions = expectedDegrees.filter(
-        (d) => !normalizedDegrees.includes(d)
-      );
-      return omissions.length > 0
-        ? `${bestMatch} no${omissions.join(" no")}`
-        : bestMatch;
-    }
-    return bestMatch;
+  if (highestScore > 0 && bestMatch) {
+    // Get the standard degrees for the best match mode
+    const standardDegrees = getStandardDegreesForMode(bestMatch);
+
+    // Find omissions (degrees that are missing)
+    const omissions = standardDegrees
+      .filter(
+        (d) => !originalDegrees.some((nd) => nd.replace(/[#b]/, "") === d)
+      )
+      .map((d) => `no${d}`);
+
+    // Contextually rename 4# to 5b if appropriate
+    const displayDegrees = originalDegrees.map((d) => {
+      // If this is 4# and the scale already contains 4, display as 5b
+      if (d === "4#" && originalDegrees.includes("4")) {
+        return "5b";
+      }
+      // Otherwise keep the original notation
+      return d;
+    });
+
+    // Find alterations (degrees that have sharps or flats)
+    const alterations = displayDegrees
+      .filter((d) => d.includes("#") || d.includes("b"))
+      .filter((d) => {
+        // Only include if it's not a standard part of the mode
+        const baseDegree = d.replace(/[#b]/, "");
+        const standardAccidental = getStandardAccidentalForMode(
+          bestMatch,
+          baseDegree
+        );
+        const currentAccidental = d.includes("#") ? "#" : "b";
+        return currentAccidental !== standardAccidental;
+      })
+      .map((d) => d);
+
+    // Combine mode name with alterations and omissions
+    const modifications = [...alterations, ...omissions].join(" ");
+    return modifications ? `${bestMatch} ${modifications}` : bestMatch;
   }
 
   return "No matching mode found";
+}
+
+/**
+ * Get the standard degrees for a given mode without accidentals
+ */
+function getStandardDegreesForMode(modeName) {
+  return ["1", "2", "3", "4", "5", "6", "7"];
+}
+
+/**
+ * Get the standard accidental for a degree in a given mode
+ * Returns '', 'b', or '#'
+ */
+function getStandardAccidentalForMode(modeName, degree) {
+  // Define standard accidentals for each mode
+  const modeAccidentals = {
+    Ionian: {}, // Major scale - no accidentals
+    Dorian: { 3: "b", 7: "b" },
+    Phrygian: { 2: "b", 3: "b", 6: "b", 7: "b" },
+    Lydian: { 4: "#" },
+    Mixolydian: { 7: "b" },
+    Aeolian: { 3: "b", 6: "b", 7: "b" }, // Natural minor
+    Locrian: { 2: "b", 3: "b", 5: "b", 6: "b", 7: "b" },
+  };
+
+  // Return the standard accidental if it exists, otherwise empty string (no accidental)
+  return (modeAccidentals[modeName] && modeAccidentals[modeName][degree]) || "";
 }
 
 /**
