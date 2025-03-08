@@ -1013,6 +1013,20 @@ function getSelectedNotes() {
  */
 function generatePianoKeyForNote(note) {
   const colorClass = note.accidental ? "key-black" : "key-white";
+  const noteMapping = {
+    C: "0-C-1",
+    "C#": "1-C#\\Db-2b",
+    D: "2-D-2",
+    Eb: "3-Eb/D#-3b(2#)",
+    E: "4-E-3(4b)",
+    F: "5-F-4",
+    "F#": "6-F#/Gb-4#(5b)",
+    G: "7-G-5",
+    "G#": "8-G#/Ab-6b(5#)",
+    A: "9-A-6",
+    Bb: "10-Bb-7b",
+    B: "11-B-7",
+  };
   const thirdNomenclature = {
     C: "1",
     "C#": "2b",
@@ -1027,7 +1041,15 @@ function generatePianoKeyForNote(note) {
     Bb: "7b",
     B: "7",
   };
-  const noteText = `${note.index}-${note.name}-${thirdNomenclature[note.name]}`;
+
+  // Split the note text into parts for better formatting
+  const parts = noteMapping[note.name].split("-");
+  const noteText = `
+    <div class="key-index">${parts[0]}</div>
+    <div class="key-name">${parts[1]}</div>
+    <div class="key-degree">${parts[2]}</div>
+  `;
+
   let div = document.createElement("div");
   div.classList.add("piano-key", colorClass, "note-selector");
   div.setAttribute("data-note", note.name);

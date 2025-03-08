@@ -102,6 +102,29 @@
   transition: all 0.2s ease-in-out;
   position: relative;
   overflow: hidden;
+  gap: 2px;
+}
+
+.piano-key .key-index,
+.piano-key .key-name,
+.piano-key .key-degree {
+  width: 100%;
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.piano-key .key-index {
+  font-weight: bold;
+}
+
+.piano-key .key-name {
+  font-size: 0.85em;
+}
+
+.piano-key .key-degree {
+  font-size: 0.75em;
 }
 
 /* Alterations styling */
@@ -457,45 +480,46 @@ details[open] summary::before {
 
 @media (max-width: 768px) {
   #chords-table-container {
-    margin-top: 0.5rem;
-    overflow-x: auto;
+    margin-top: 1rem;
   }
 
   .section-title {
     font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-    padding-left: 0.5rem;
   }
 
   #chords-table .header-groups th:not(:first-child) {
-    font-size: 0.65rem;
-    padding: 0.25rem;
-    min-width: 80px;
+    height: 5rem;
+    font-size: 0.8rem;
   }
 
   #chords-table .header-chords th,
-  #chords-table td {
-    font-size: 0.65rem;
-    padding: 0.25rem;
+  #chords-table .row-header {
+    font-size: 0.8rem;
   }
 
   .piano-key {
-    min-width: 1.5rem;
-    font-size: 0.6rem;
+    padding: 0.4rem 0.2rem;
+    font-size: 0.7rem;
+  }
+
+  .piano-key .key-index {
+    font-size: 0.8em;
+  }
+
+  .piano-key .key-name {
+    font-size: 0.75em;
+  }
+
+  .piano-key .key-degree {
+    font-size: 0.7em;
   }
 
   #piano-container {
-    padding: 0.5rem;
-    margin-top: 0.5rem;
+    height: auto;
   }
 
   #piano-keys {
-    column-gap: 3px;
-  }
-
-  #modal-result-container {
-    padding: 0.5rem;
-    margin-top: 0.5rem;
+    height: 8rem;
   }
 
   .mode-rotation {
@@ -558,8 +582,16 @@ details[open] summary::before {
 
 @media (max-width: 480px) {
   .piano-key {
-    min-width: 1.25rem;
-    font-size: 0.5rem;
+    padding: 0.3rem 0.15rem;
+    font-size: 0.65rem;
+  }
+
+  .piano-key .key-name {
+    font-size: 0.7em;
+  }
+
+  .piano-key .key-degree {
+    font-size: 0.65em;
   }
 
   #modal-result-container {
